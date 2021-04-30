@@ -21,6 +21,10 @@ spec:
       - env:
         - name: URL
           value: "https://dev.opsdata.io"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         image: registry.support.tools/opsdata-perf/login:BUILD_NUMBER
         imagePullPolicy: IfNotPresent
         name: opsdata-login

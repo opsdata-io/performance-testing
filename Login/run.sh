@@ -3,9 +3,9 @@ register_post_data()
 RandomData=$1
   cat <<EOF
 {
-    "name": "TestUser_${RandomData}",
+    "name": "${RandomData}",
     "email": "${RandomData}@email.test",
-    "password": "Passw0rd"
+    "password": "${RandomData}"
 }
 EOF
 }
@@ -16,7 +16,7 @@ RandomData=$1
   cat <<EOF
 {
     "email": "${RandomData}@email.test",
-    "password": "Passw0rd"
+    "password": "${RandomData}"
 }
 EOF
 }
@@ -58,6 +58,7 @@ echo ""
 
 while true;
 do
-  RandomNumber=$(( ( RANDOM % 999999 )  + 1 ))
-  task "$RandomNumber"
+  EPOCH=`date +%s`
+  RandomName=`echo "$POD_NAME"_"$EPOCH"`
+  task "$RandomName"
 done
