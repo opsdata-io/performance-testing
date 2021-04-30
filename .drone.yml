@@ -1,0 +1,116 @@
+---
+kind: pipeline
+type: kubernetes
+name: OpsData-Perf-Testing
+
+steps:
+
+  - name: Customize-kube-files
+    image: supporttools/kube-builder:32
+    pull: true
+    environment:
+      APPENV: ${DRONE_COMMIT_BRANCH}
+    commands:
+      - bash ./deploy.sh
+
+  - name: Docker-Build-Login
+    image: plugins/docker
+    settings:
+      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
+      purge: false
+      registry: registry.support.tools
+      repo: registry.support.tools/opsdata-perf/login
+      dockerfile: ./Login/Dockerfile
+      context: ./Login/
+      tags:
+        - ${DRONE_BUILD_NUMBER}
+        - ${DRONE_COMMIT_BRANCH}
+        - latest
+      cache_from: "registry.support.tools/opsdata-perf/login:latest"
+      username:
+        from_secret: registry-username
+      password:
+        from_secret: registry-password
+
+  - name: Deploy-to-Dev
+    image: supporttools/kube-builder:32
+    pull: true
+    settings:
+      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
+      kubernetes_server:
+        from_secret: b1-k3s-prd_server
+      kubernetes_token:
+        from_secret: b1-k3s-prd_token
+    environment:
+      PASSWORD:
+        from_secret: registry-password
+      USERNAME:
+        from_secret: registry-username
+    commands:
+      - kubectl label --overwrite ns opsdata-perf-dev team=opsdata
+      - kubectl label --overwrite ns opsdata-perf-dev app=opsdata-perf
+      - kubectl label --overwrite ns opsdata-perf-dev ns-purge=false
+      - kubectl label --overwrite ns opsdata-perf-dev class=dev
+      - kubectl annotate --overwrite ns opsdata-perf-dev field.cattle.io/projectId=c-jrfsw:p-w678r
+      - kubectl apply -n opsdata-perf-dev -f ./deployment-ready/
+
+  - name: Deploy-to-Staging
+    image: supporttools/kube-builder:32
+    pull: true
+    settings:
+      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
+      kubernetes_server:
+        from_secret: b1-k3s-prd_server
+      kubernetes_token:
+        from_secret: b1-k3s-prd_token
+    environment:
+      PASSWORD:
+        from_secret: registry-password
+      USERNAME:
+        from_secret: registry-username
+    commands:
+      - kubectl label --overwrite ns opsdata-staging team=opsdata
+      - kubectl label --overwrite ns opsdata-staging app=opsdata-perf
+      - kubectl label --overwrite ns opsdata-staging ns-purge=false
+      - kubectl label --overwrite ns opsdata-staging class=staging
+      - kubectl annotate --overwrite ns opsdata-staging field.cattle.io/projectId=c-jrfsw:p-w678r
+      - kubectl apply -n opsdata-staging -f ./deployment-ready/
+    when:
+     event:
+     - deployment
+     - promote
+     target:
+     - staging
+
+  - name: Deploy-to-Production
+    image: supporttools/kube-builder:32
+    pull: true
+    settings:
+      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
+      kubernetes_server:
+        from_secret: b1-k3s-prd_server
+      kubernetes_token:
+        from_secret: b1-k3s-prd_token
+    environment:
+      PASSWORD:
+        from_secret: registry-password
+      USERNAME:
+        from_secret: registry-username
+    commands:
+      - kubectl label --overwrite ns opsdata-production team=opsdata
+      - kubectl label --overwrite ns opsdata-production app=opsdata-perf
+      - kubectl label --overwrite ns opsdata-production ns-purge=false
+      - kubectl label --overwrite ns opsdata-production class=production
+      - kubectl annotate --overwrite  ns opsdata-production field.cattle.io/projectId=c-jrfsw:p-w678r
+      - helm repo add bitnami https://charts.bitnami.com/bitnami
+      - helm upgrade --install opsdata --namespace opsdata-production -f ./helm-config-ready/mariadb-galera/values.yaml bitnami/mariadb-galera
+      - kubectl apply -n opsdata-production -f ./deployment-ready/
+    when:
+     event:
+     - deployment
+     - promote
+     target:
+     - production
+
+image_pull_secrets:
+- regcreds

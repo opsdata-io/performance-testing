@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opsdata-login
+spec:
+  selector:
+    matchLabels:
+      app: opsdata-login
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: opsdata-login
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - env:
+        - name: URL
+          value: "https://dev.opsdata.io"
+        image: registry.support.tools/opsdata-perf/login:BUILD_NUMBER
+        imagePullPolicy: IfNotPresent
+        name: opsdata-login
