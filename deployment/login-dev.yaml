@@ -4,6 +4,7 @@ kind: Deployment
 metadata:
   name: opsdata-login
 spec:
+  replicas: 3
   selector:
     matchLabels:
       app: opsdata-login
