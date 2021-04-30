@@ -52,7 +52,7 @@ steps:
       - kubectl label --overwrite ns opsdata-perf-dev ns-purge=false
       - kubectl label --overwrite ns opsdata-perf-dev class=dev
       - kubectl annotate --overwrite ns opsdata-perf-dev field.cattle.io/projectId=c-jrfsw:p-w678r
-      - kubectl apply -n opsdata-perf-dev -f ./deployment-ready/
+      - kubectl apply -n opsdata-perf-dev -f ./deployment-ready/login-dev.yaml      
 
   - name: Deploy-to-Staging
     image: supporttools/kube-builder:32
@@ -69,12 +69,12 @@ steps:
       USERNAME:
         from_secret: registry-username
     commands:
-      - kubectl label --overwrite ns opsdata-staging team=opsdata
-      - kubectl label --overwrite ns opsdata-staging app=opsdata-perf
-      - kubectl label --overwrite ns opsdata-staging ns-purge=false
-      - kubectl label --overwrite ns opsdata-staging class=staging
-      - kubectl annotate --overwrite ns opsdata-staging field.cattle.io/projectId=c-jrfsw:p-w678r
-      - kubectl apply -n opsdata-staging -f ./deployment-ready/
+      - kubectl label --overwrite ns opsdata-perf-staging team=opsdata
+      - kubectl label --overwrite ns opsdata-perf-staging app=opsdata-perf
+      - kubectl label --overwrite ns opsdata-perf-staging ns-purge=false
+      - kubectl label --overwrite ns opsdata-perf-staging class=staging
+      - kubectl annotate --overwrite ns opsdata-perf-staging field.cattle.io/projectId=c-jrfsw:p-w678r
+      - kubectl apply -n opsdata-perf-staging -f ./deployment-ready/login-staging.yaml
     when:
      event:
      - deployment
@@ -97,14 +97,14 @@ steps:
       USERNAME:
         from_secret: registry-username
     commands:
-      - kubectl label --overwrite ns opsdata-production team=opsdata
-      - kubectl label --overwrite ns opsdata-production app=opsdata-perf
-      - kubectl label --overwrite ns opsdata-production ns-purge=false
-      - kubectl label --overwrite ns opsdata-production class=production
-      - kubectl annotate --overwrite  ns opsdata-production field.cattle.io/projectId=c-jrfsw:p-w678r
+      - kubectl label --overwrite ns opsdata-perf-production team=opsdata
+      - kubectl label --overwrite ns opsdata-perf-production app=opsdata-perf
+      - kubectl label --overwrite ns opsdata-perf-production ns-purge=false
+      - kubectl label --overwrite ns opsdata-perf-production class=production
+      - kubectl annotate --overwrite  ns opsdata-perf-production field.cattle.io/projectId=c-jrfsw:p-w678r
       - helm repo add bitnami https://charts.bitnami.com/bitnami
-      - helm upgrade --install opsdata --namespace opsdata-production -f ./helm-config-ready/mariadb-galera/values.yaml bitnami/mariadb-galera
-      - kubectl apply -n opsdata-production -f ./deployment-ready/
+      - helm upgrade --install opsdata --namespace opsdata-perf-production -f ./helm-config-ready/mariadb-galera/values.yaml bitnami/mariadb-galera
+      - kubectl apply -n opsdata-perf-production -f ./deployment-ready/login-production.yaml
     when:
      event:
      - deployment
