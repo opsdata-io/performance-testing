@@ -28,28 +28,28 @@ echo "Registering user..."
 curl -i \
 -H "Accept: application/json" \
 -H "Content-Type:application/json" \
--X POST --data "$(register_post_data $1)" "https://${URL}/api/register"
+-X POST --data "$(register_post_data $1)" "${URL}/api/register"
 echo ""
 echo "Logging in..."
 curl -i \
 -H "Accept: application/json" \
 -H "Content-Type:application/json" \
 -b cookie-"$1".txt -c cookie-"$1".txt \
--X POST --data "$(login_post_data $1)" "https://${URL}/api/login"
+-X POST --data "$(login_post_data $1)" "${URL}/api/login"
 echo ""
 echo "Getting user data..."
 curl -i \
 -H "Accept: application/json" \
 -H "Content-Type:application/json" \
 -b cookie-"$1".txt -c cookie-"$1".txt \
--X GET "https://${URL}/api/user"
+-X GET "${URL}/api/user"
 echo ""
 echo "Logout..."
 curl -i \
 -H "Accept: application/json" \
 -H "Content-Type:application/json" \
 -b cookie-"$1".txt -c cookie-"$1".txt \
--X POST "https://${URL}/api/logout"
+-X POST "${URL}/api/logout"
 echo ""
 echo "Cleaning up cookie..."
 rm -rf cookie-"$1".txt
