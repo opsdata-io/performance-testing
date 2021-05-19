@@ -3,6 +3,10 @@ kind: pipeline
 type: kubernetes
 name: OpsData-Perf-Testing
 
+platform:
+  os: linux
+  arch: amd64
+
 steps:
 
   - name: Customize-kube-files
@@ -16,7 +20,6 @@ steps:
   - name: Docker-Build-Login
     image: plugins/docker
     settings:
-      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
       purge: false
       registry: registry.support.tools
       repo: registry.support.tools/opsdata-perf/login
@@ -36,9 +39,8 @@ steps:
     image: supporttools/kube-builder:32
     pull: true
     settings:
-      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
       kubernetes_server:
-        from_secret: b1-k3s-prd_server
+        from_secret: a1-k3s-prd_server
       kubernetes_token:
         from_secret: b1-k3s-prd_token
     environment:
@@ -47,20 +49,14 @@ steps:
       USERNAME:
         from_secret: registry-username
     commands:
-      - kubectl label --overwrite ns opsdata-perf-dev team=opsdata
-      - kubectl label --overwrite ns opsdata-perf-dev app=opsdata-perf
-      - kubectl label --overwrite ns opsdata-perf-dev ns-purge=false
-      - kubectl label --overwrite ns opsdata-perf-dev class=dev
-      - kubectl annotate --overwrite ns opsdata-perf-dev field.cattle.io/projectId=c-jrfsw:p-w678r
       - kubectl apply -n opsdata-perf-dev -f ./deployment-ready/login-dev.yaml      
 
   - name: Deploy-to-Staging
     image: supporttools/kube-builder:32
     pull: true
     settings:
-      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
       kubernetes_server:
-        from_secret: b1-k3s-prd_server
+        from_secret: a1-k3s-prd_server
       kubernetes_token:
         from_secret: b1-k3s-prd_token
     environment:
@@ -69,11 +65,6 @@ steps:
       USERNAME:
         from_secret: registry-username
     commands:
-      - kubectl label --overwrite ns opsdata-perf-staging team=opsdata
-      - kubectl label --overwrite ns opsdata-perf-staging app=opsdata-perf
-      - kubectl label --overwrite ns opsdata-perf-staging ns-purge=false
-      - kubectl label --overwrite ns opsdata-perf-staging class=staging
-      - kubectl annotate --overwrite ns opsdata-perf-staging field.cattle.io/projectId=c-jrfsw:p-w678r
       - kubectl apply -n opsdata-perf-staging -f ./deployment-ready/login-staging.yaml
     when:
      event:
@@ -86,9 +77,8 @@ steps:
     image: supporttools/kube-builder:32
     pull: true
     settings:
-      custom_dns: [ 1.1.1.1, 8.8.8.8 ]
       kubernetes_server:
-        from_secret: b1-k3s-prd_server
+        from_secret: a1-k3s-prd_server
       kubernetes_token:
         from_secret: b1-k3s-prd_token
     environment:
@@ -97,13 +87,6 @@ steps:
       USERNAME:
         from_secret: registry-username
     commands:
-      - kubectl label --overwrite ns opsdata-perf-production team=opsdata
-      - kubectl label --overwrite ns opsdata-perf-production app=opsdata-perf
-      - kubectl label --overwrite ns opsdata-perf-production ns-purge=false
-      - kubectl label --overwrite ns opsdata-perf-production class=production
-      - kubectl annotate --overwrite  ns opsdata-perf-production field.cattle.io/projectId=c-jrfsw:p-w678r
-      - helm repo add bitnami https://charts.bitnami.com/bitnami
-      - helm upgrade --install opsdata --namespace opsdata-perf-production -f ./helm-config-ready/mariadb-galera/values.yaml bitnami/mariadb-galera
       - kubectl apply -n opsdata-perf-production -f ./deployment-ready/login-production.yaml
     when:
      event:
@@ -111,6 +94,10 @@ steps:
      - promote
      target:
      - production
+
+node_selector:
+  beta.kubernetes.io/arch: amd64
+  drone-runner: true
 
 image_pull_secrets:
 - regcreds
